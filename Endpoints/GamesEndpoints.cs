@@ -2,6 +2,7 @@ using System;
 using GameStore.Api.Data;
 using GameStore.Api.Dtos;
 using GameStore.Api.Entities;
+using GameStore.Api.Mapping;
 using Microsoft.AspNetCore.Authorization.Infrastructure;
 
 namespace GameStore.Api.Endpoints;
@@ -12,7 +13,7 @@ public static class GamesEndpoints
 
     const string GetGameEndpointName = "GetGame";
 
-    private static readonly List<GameDto> games = [
+    private static readonly List<GameSummaryDto> games = [
         new (
         1,
         "Street Fighter II",
@@ -43,31 +44,26 @@ public static class GamesEndpoints
         group.MapGet("/", () => games);
 
         // GET /games/1
-        group.MapGet("/{id}", (int id) =>
+        group.MapGet("/{id}", (int id, GameStoreContext dbContext) =>
         {
-            GameDto? game = games.Find(game => game.Id == id);
+            Game? game = dbContext.Games.Find(id);
 
-            return game is null ? Results.NotFound() : Results.Ok(game);
+            return game is null ?
+            Results.NotFound() : Results.Ok(game.ToGameDetailsDto());
         }).WithName(GetGameEndpointName);
 
         // POST /games
         group.MapPost("/", (CreateGameDto newGame, GameStoreContext dbContext) =>
         {
 
-
-            Game game = new()
-            {
-                Name = newGame.Name,
-                Genre = dbContext.Genres.Find(newGame.GenreId),
-                GenreId = newGame.GenreId,
-                Price = newGame.Price,
-                ReleaseDate = newGame.ReleaseDate
-            };
+            Game game = newGame.ToEntity();
 
             dbContext.Games.Add(game);
             dbContext.SaveChanges();
 
-            return Results.CreatedAtRoute(GetGameEndpointName, new { id = game.Id }, game);
+            return Results.CreatedAtRoute(
+                GetGameEndpointName,
+                new { id = game.Id }, game.ToGameDetailsDto());
         });
 
         // PUT /games
@@ -78,7 +74,7 @@ public static class GamesEndpoints
             {
                 return Results.NotFound();
             }
-            games[index] = new GameDto(
+            games[index] = new GameSummaryDto(
                 id,
                 updateGame.Name,
                 updateGame.Genre,

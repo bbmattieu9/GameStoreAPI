@@ -8,10 +8,10 @@ POST http://localhost:5080/games
 Content-Type: application/json
 
 {
-    "name": "Minecraft2",
-    "genreId": 5,
-    "price": 19.99,
-    "releaseDate": "2011-11-18"
+    "name": "Final Fantasy XIV",
+    "genreId": 2,
+    "price": 59.89,
+    "releaseDate": "2010-01-13"
 }
 
 
